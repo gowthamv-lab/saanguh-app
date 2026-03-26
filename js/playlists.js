@@ -1,152 +1,136 @@
 // ===============================
-// Songs Module — JioSaavn API Integration
+// Playlists Module
 // ===============================
 
-// Use local proxy server (run server.py to start)
-const JIOSAAVN_API = '/api';
+const Playlists = {
+    list: [],
 
-const Songs = {
-    allSongs: [],
-    isLoading: false,
-
-    // Search songs from JioSaavn
-    async search(query) {
-        try {
-            const res = await fetch(`${JIOSAAVN_API}/search/songs?query=${encodeURIComponent(query)}&limit=30`);
-            const data = await res.json();
-            if (data.success && data.data && data.data.results) {
-                return data.data.results.map(song => this.formatSong(song));
-            }
-            return [];
-        } catch (err) {
-            console.error('Search error:', err);
-            return [];
-        }
+    init() {
+        this.list = LocalDB.get('playlists') || [];
+        this.renderSidebar();
     },
 
-    // Get trending/top songs
-    async getTrending() {
-        try {
-            // Search for popular Tamil songs
-            const queries = ['Tamil hits 2025', 'Anirudh Tamil', 'Tamil melody'];
-            const randomQuery = queries[Math.floor(Math.random() * queries.length)];
-            const res = await fetch(`${JIOSAAVN_API}/search/songs?query=${encodeURIComponent(randomQuery)}&limit=20`);
-            const data = await res.json();
-            if (data.success && data.data && data.data.results) {
-                return data.data.results.map(song => this.formatSong(song));
-            }
-            return [];
-        } catch (err) {
-            console.error('Trending error:', err);
-            return [];
-        }
-    },
-
-    // Get songs by specific query/genre
-    async getByGenre(genre) {
-        try {
-            const res = await fetch(`${JIOSAAVN_API}/search/songs?query=${encodeURIComponent(genre)}&limit=20`);
-            const data = await res.json();
-            if (data.success && data.data && data.data.results) {
-                return data.data.results.map(song => this.formatSong(song));
-            }
-            return [];
-        } catch (err) {
-            console.error('Genre fetch error:', err);
-            return [];
-        }
-    },
-
-    // Get song details by ID
-    async getSongById(id) {
-        try {
-            const res = await fetch(`${JIOSAAVN_API}/songs/${id}`);
-            const data = await res.json();
-            if (data.success && data.data && data.data.length > 0) {
-                return this.formatSong(data.data[0]);
-            }
-            return null;
-        } catch (err) {
-            console.error('Song detail error:', err);
-            return null;
-        }
-    },
-
-    // Format JioSaavn song data to our standard format
-    formatSong(song) {
-        // Get best quality download URL
-        let audioUrl = '';
-        if (song.downloadUrl) {
-            // Get highest quality available
-            const urls = song.downloadUrl;
-            if (Array.isArray(urls)) {
-                const best = urls.find(u => u.quality === '320kbps') ||
-                             urls.find(u => u.quality === '160kbps') ||
-                             urls.find(u => u.quality === '96kbps') ||
-                             urls[urls.length - 1];
-                audioUrl = best ? best.url : '';
-            } else if (typeof urls === 'string') {
-                audioUrl = urls;
-            }
-        }
-
-        // Get best quality image
-        let coverUrl = '';
-        if (song.image) {
-            if (Array.isArray(song.image)) {
-                const bestImg = song.image.find(i => i.quality === '500x500') ||
-                                song.image.find(i => i.quality === '150x150') ||
-                                song.image[song.image.length - 1];
-                coverUrl = bestImg ? bestImg.url : '';
-            } else if (typeof song.image === 'string') {
-                coverUrl = song.image;
-            }
-        }
-
-        // Get artist names
-        let artistName = 'Unknown Artist';
-        if (song.artists && song.artists.primary && song.artists.primary.length > 0) {
-            artistName = song.artists.primary.map(a => a.name).join(', ');
-        } else if (song.primaryArtists) {
-            artistName = song.primaryArtists;
-        }
-
-        return {
-            id: song.id,
-            title: this.decodeHTML(song.name || song.title || 'Unknown'),
-            artist: this.decodeHTML(artistName),
-            album: this.decodeHTML(song.album?.name || song.album || ''),
-            genre: song.language || 'Tamil',
-            cover_url: coverUrl,
-            audio_url: audioUrl,
-            duration: song.duration || 0,
-            year: song.year || '',
-            has_video: song.hasVideo || false
+    create(name) {
+        const playlist = {
+            id: 'pl_' + Date.now(),
+            name,
+            songs: [],
+            created_at: new Date().toISOString(),
+            emoji: this.getRandomEmoji()
         };
+        this.list.push(playlist);
+        this.save();
+        this.renderSidebar();
+        return playlist;
     },
 
-    // Decode HTML entities that come from the API
-    decodeHTML(text) {
-        if (!text) return '';
-        const textarea = document.createElement('textarea');
-        textarea.innerHTML = text;
-        return textarea.value;
+    delete(playlistId) {
+        this.list = this.list.filter(p => p.id !== playlistId);
+        this.save();
+        this.renderSidebar();
     },
 
-    // Add to recently played
-    addToRecent(song) {
-        let recent = LocalDB.get('recent') || [];
-        // Remove if already exists
-        recent = recent.filter(s => s.id !== song.id);
-        // Add to beginning
-        recent.unshift(song);
-        // Keep only last 20
-        recent = recent.slice(0, 20);
-        LocalDB.set('recent', recent);
+    addSong(playlistId, song) {
+        const playlist = this.list.find(p => p.id === playlistId);
+        if (!playlist) return false;
+
+        // Check if song already exists
+        if (playlist.songs.find(s => s.id === song.id)) {
+            App.showToast('Song already in playlist');
+            return false;
+        }
+
+        playlist.songs.push(song);
+        this.save();
+        App.showToast(`Added to ${playlist.name}`);
+        return true;
     },
 
-    // Get recently played
-    getRecent() {
-        return LocalDB.get('recent') || [];
+    removeSong(playlistId, songId) {
+        const playlist = this.list.find(p => p.id === playlistId);
+        if (!playlist) return;
+        playlist.songs = playlist.songs.filter(s => s.id !== songId);
+        this.save();
+    },
+
+    getPlaylist(playlistId) {
+        return this.list.find(p => p.id === playlistId);
+    },
+
+    save() {
+        LocalDB.set('playlists', this.list);
+    },
+
+    renderSidebar() {
+        const container = document.getElementById('playlist-list');
+        if (this.list.length === 0) {
+            container.innerHTML = '<p style="padding: 8px 14px; font-size: 0.8rem; color: var(--text-tertiary);">No playlists yet</p>';
+            return;
+        }
+
+        container.innerHTML = this.list.map(pl => `
+            <div class="playlist-item" data-playlist-id="${pl.id}" onclick="App.showPlaylist('${pl.id}')">
+                <div class="playlist-item-icon">${pl.emoji || '🎵'}</div>
+                <span>${pl.name}</span>
+            </div>
+        `).join('');
+    },
+
+    // Show context menu to add song to playlist
+    showAddToPlaylistMenu(song, x, y) {
+        // Remove existing context menu
+        document.querySelectorAll('.context-menu').forEach(m => m.remove());
+
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+
+        let items = '<button class="context-menu-item" onclick="Playlists.createAndAdd()" style="border-bottom: 1px solid var(--border-color); margin-bottom: 4px; padding-bottom: 12px;">➕ Create New Playlist</button>';
+
+        this.list.forEach(pl => {
+            items += `<button class="context-menu-item" onclick="Playlists.addSong('${pl.id}', Playlists._tempSong)">${pl.emoji} ${pl.name}</button>`;
+        });
+
+        menu.innerHTML = items;
+        document.body.appendChild(menu);
+
+        // Store the song temporarily
+        this._tempSong = song;
+
+        // Close on click outside
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu(e) {
+                if (!menu.contains(e.target)) {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 10);
+
+        // Adjust position if menu goes off screen
+        const rect = menu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
+        }
+        if (rect.bottom > window.innerHeight) {
+            menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
+        }
+    },
+
+    createAndAdd() {
+        document.querySelectorAll('.context-menu').forEach(m => m.remove());
+        const name = prompt('Enter playlist name:');
+        if (name) {
+            const pl = this.create(name);
+            if (this._tempSong) {
+                this.addSong(pl.id, this._tempSong);
+            }
+        }
+    },
+
+    getRandomEmoji() {
+        const emojis = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎺', '🥁', '🎻', '🎤', '🌟', '💫', '🔥', '💜', '🌙', '✨', '🎭'];
+        return emojis[Math.floor(Math.random() * emojis.length)];
     }
 };
