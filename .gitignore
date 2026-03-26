@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Local Data / Temp Files
+output.json
+scratch_*.json
+test_search.json
+
+# VS Code
+.vscode/
+
+# Logs
+*.log

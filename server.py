@@ -12,6 +12,8 @@ import urllib.error
 import os
 import re
 import base64
+import concurrent.futures
+import socketserver
 
 try:
     from ytmusicapi import YTMusic
@@ -21,6 +23,10 @@ try:
 except ImportError:
     HAS_YT = False
     print("⚠️ ytmusicapi or yt-dlp not installed. YouTube integration will be disabled.")
+
+# Simple In-Memory Cache for Search Results and Stream URLs
+SEARCH_CACHE = {}
+STREAM_URL_CACHE = {}
 
 PORT = 3000
 JIOSAAVN_BASE = "https://www.jiosaavn.com/api.php"
@@ -32,6 +38,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/api/yt/stream/"):
             self.handle_yt_stream()
+        elif self.path.startswith("/api/jio/stream"):
+            self.handle_jio_stream()
         elif self.path.startswith("/api/"):
             self.handle_api()
         elif self.path.startswith("/stream/"):
@@ -39,6 +47,24 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         else:
             super().do_GET()
 
+    def handle_jio_stream(self):
+        """Fetch token and proxy JioSaavn stream dynamically."""
+        parsed = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed.query)
+        enc_url = params.get("enc_url", [""])[0]
+        bitrate = params.get("bitrate", ["320"])[0]
+        
+        if not enc_url:
+            self.send_error(400, "Missing enc_url")
+            return
+
+        download_url = self.get_jiosaavn_download_url(enc_url, bitrate)
+        if not download_url:
+            self.send_error(500, "Failed to fetch JioSaavn stream URL")
+            return
+
+        self._proxy_media(download_url, referer="https://www.jiosaavn.com/")
+        
     def handle_yt_stream(self):
         """Proxy audio stream from YouTube via yt-dlp."""
         if not HAS_YT:
@@ -47,19 +73,26 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             
         video_id = self.path.split("/api/yt/stream/")[1].split("?")[0]
         
-        try:
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'quiet': True,
-                'no_warnings': True,
-                'nocheckcertificate': True
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
-                audio_url = info['url']
-        except Exception as e:
-            self.send_error(500, f"Error extracting YouTube URL: {e}")
-            return
+        if video_id in STREAM_URL_CACHE:
+            audio_url = STREAM_URL_CACHE[video_id]
+        else:
+            try:
+                ydl_opts = {
+                    'format': 'bestaudio/best',
+                    'quiet': True,
+                    'no_warnings': True,
+                    'nocheckcertificate': True,
+                    'skip_download': True,
+                    'noplaylist': True,
+                    'extract_flat': False
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+                    audio_url = info['url']
+                    STREAM_URL_CACHE[video_id] = audio_url
+            except Exception as e:
+                self.send_error(500, f"Error extracting YouTube URL: {e}")
+                return
 
         self._proxy_media(audio_url, referer="https://www.youtube.com/")
 
@@ -119,8 +152,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                     self.wfile.write(chunk)
                     
         except Exception as e:
-            print(f"  ❌ Stream error: {e}")
-            # Client might have disconnected, safe to ignore
+            if not str(e).startswith("[WinError 10053]"):
+                print(f"  ❌ Stream error: {e}")
             pass
 
     def handle_api(self):
@@ -148,29 +181,44 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json({"success": False, "error": str(e)})
 
     def search_combined(self, params):
-        """Search both JioSaavn and YouTube simultaneously."""
-        query = params.get("query", "")
+        """Search both JioSaavn and YouTube simultaneously with caching."""
+        query = params.get("query", "").lower().strip()
         limit = int(params.get("limit", "15"))
         
+        # Check cache
+        cache_key = f"{query}_{limit}"
+        if cache_key in SEARCH_CACHE:
+            return SEARCH_CACHE[cache_key]
+
         jio_songs = []
         yt_songs = []
 
-        # 1. Fetch from JioSaavn
-        try:
-            url = f"{JIOSAAVN_BASE}?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n={limit}&p=1&q={urllib.parse.quote(query)}"
-            data = self.fetch_jiosaavn(url)
-            if data and "results" in data and isinstance(data["results"], list):
-                jio_songs = [self.format_jiosaavn_song(s) for s in data["results"]]
-        except Exception as e:
-            print(f"JioSaavn search error: {e}")
-
-        # 2. Fetch from YouTube Music
-        if HAS_YT:
+        def get_jio():
             try:
-                results = ytmusic.search(query, filter="songs", limit=limit)
-                yt_songs = [self.format_yt_song(s) for s in results if s.get('videoId')]
+                url = f"{JIOSAAVN_BASE}?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n={limit}&p=1&q={urllib.parse.quote(query)}"
+                data = self.fetch_jiosaavn(url)
+                if data and "results" in data and isinstance(data["results"], list):
+                    return [self.format_jiosaavn_song(s) for s in data["results"]]
             except Exception as e:
-                print(f"YouTube search error: {e}")
+                print(f"JioSaavn search error: {e}")
+            return []
+            
+        def get_yt():
+            if HAS_YT:
+                try:
+                    results = ytmusic.search(query, filter="songs", limit=limit)
+                    return [self.format_yt_song(s) for s in results if s.get('videoId')]
+                except Exception as e:
+                    print(f"YouTube search error: {e}")
+            return []
+
+        # Run both searches in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future_jio = executor.submit(get_jio)
+            future_yt = executor.submit(get_yt)
+            
+            jio_songs = future_jio.result()
+            yt_songs = future_yt.result()
 
         # Combine results: alternate one by one for diversity
         combined = []
@@ -180,7 +228,14 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             if i < len(yt_songs):
                 combined.append(yt_songs[i])
 
-        return {"success": True, "data": {"results": combined}}
+        result = {"success": True, "data": {"results": combined}}
+        
+        # Simple cache limiting
+        if len(SEARCH_CACHE) > 50:
+            SEARCH_CACHE.clear()
+        SEARCH_CACHE[cache_key] = result
+        
+        return result
 
     def get_song(self, song_id):
         # Fallback for single song (used for trending lookup etc)
@@ -270,13 +325,11 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         encrypted_url = song.get("more_info", {}).get("encrypted_media_url", "")
         if encrypted_url:
             for bitrate, quality in [("96", "96kbps"), ("160", "160kbps"), ("320", "320kbps")]:
-                download_url = self.get_jiosaavn_download_url(encrypted_url, bitrate)
-                if download_url:
-                    proxy_url = "/stream/" + base64.b64encode(download_url.encode()).decode()
-                    download_urls.append({
-                        "quality": quality,
-                        "url": proxy_url
-                    })
+                proxy_url = f"/api/jio/stream?enc_url={urllib.parse.quote(encrypted_url)}&bitrate={bitrate}"
+                download_urls.append({
+                    "quality": quality,
+                    "url": proxy_url
+                })
 
         artist_map = song.get("more_info", {}).get("artistMap", {})
         primary_artists = []
@@ -354,9 +407,12 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             super().log_message(format, *args)
 
 
+class ThreadingHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+    daemon_threads = True
+
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    server = http.server.HTTPServer(("", PORT), ProxyHandler)
+    server = ThreadingHTTPServer(("", PORT), ProxyHandler)
     print(f"""
 ╔══════════════════════════════════════════╗
 ║        🔥 Saanguh Music Server 🔥        ║
