@@ -1,0 +1,253 @@
+/* ===============================
+   Player Bar
+   =============================== */
+.player-bar {
+    grid-column: 2;
+    grid-row: 2;
+    height: var(--player-height);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    z-index: 50;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Song Info */
+.player-song-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.player-cover {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    background: var(--bg-tertiary);
+    box-shadow: var(--shadow-sm);
+}
+
+.player-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+}
+
+.player-cover img[src] {
+    display: block;
+}
+
+.player-cover img[src=""] {
+    display: none;
+}
+
+.player-cover-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-gradient-soft);
+    color: var(--accent-primary);
+}
+
+.player-cover img[src]:not([src=""]) ~ .player-cover-placeholder {
+    display: none;
+}
+
+.player-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.player-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-artist {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Controls */
+.player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.player-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-play {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.btn-play:hover {
+    transform: scale(1.06);
+    box-shadow: 0 0 20px rgba(255,255,255,0.2);
+}
+
+.btn-play:active {
+    transform: scale(0.98);
+}
+
+/* Progress Bar */
+.player-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.time-current,
+.time-total {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    min-width: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+    transition: height var(--transition-fast);
+}
+
+.progress-bar:hover {
+    height: 6px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--text-primary);
+    border-radius: 2px;
+    width: 0%;
+    position: relative;
+    transition: background var(--transition-fast);
+}
+
+.progress-bar:hover .progress-fill {
+    background: var(--accent-primary);
+}
+
+.progress-thumb {
+    width: 12px;
+    height: 12px;
+    background: var(--text-primary);
+    border-radius: 50%;
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    box-shadow: 0 0 6px rgba(0,0,0,0.3);
+}
+
+.progress-bar:hover .progress-thumb {
+    opacity: 1;
+}
+
+/* Extra Controls */
+.player-extra {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.volume-bar {
+    width: 90px;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    transition: height var(--transition-fast);
+}
+
+.volume-bar:hover {
+    height: 6px;
+}
+
+.volume-fill {
+    height: 100%;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: background var(--transition-fast);
+}
+
+.volume-bar:hover .volume-fill {
+    background: var(--accent-primary);
+}
+
+/* ===============================
+   Player Visualizer (Animated bars when playing)
+   =============================== */
+.now-playing-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+}
+
+.now-playing-bars span {
+    width: 3px;
+    background: var(--accent-primary);
+    border-radius: 1px;
+    animation: barBounce 0.8s ease-in-out infinite;
+}
+
+.now-playing-bars span:nth-child(1) { height: 60%; animation-delay: 0s; }
+.now-playing-bars span:nth-child(2) { height: 100%; animation-delay: 0.15s; }
+.now-playing-bars span:nth-child(3) { height: 40%; animation-delay: 0.3s; }
+.now-playing-bars span:nth-child(4) { height: 80%; animation-delay: 0.45s; }
+
+@keyframes barBounce {
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1); }
+}

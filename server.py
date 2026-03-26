@@ -396,7 +396,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, format, *args):
-        msg = args[0] if args else ""
+        msg = str(args[0]) if args else ""
         if "/api/" in msg:
             print(f"  🎵 API: {msg}")
         elif "/stream/" in msg:

@@ -1,0 +1,236 @@
+/* ===============================
+   Responsive Breakpoints
+   =============================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 220px;
+    }
+
+    .main-content {
+        padding: 20px 24px;
+        padding-bottom: calc(var(--player-height) + 20px);
+    }
+
+    .featured-card {
+        height: 200px;
+    }
+
+    .featured-title {
+        font-size: 1.6rem;
+    }
+
+    .songs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .song-row {
+        grid-template-columns: 40px 1fr auto auto;
+    }
+
+    .song-row-album {
+        display: none;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr var(--player-height);
+    }
+
+    /* Sidebar becomes a slide-out drawer */
+    .sidebar {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        width: 280px;
+        height: 100vh;
+        z-index: 300;
+        transition: left var(--transition-slow);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 250;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--transition-normal);
+    }
+
+    .sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .mobile-menu-toggle {
+        display: flex;
+    }
+
+    .main-content {
+        padding: 70px 16px 16px;
+        padding-bottom: calc(var(--player-height) + 16px);
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .featured-card {
+        height: 180px;
+        border-radius: var(--border-radius);
+    }
+
+    .featured-content {
+        padding: 20px;
+    }
+
+    .featured-title {
+        font-size: 1.3rem;
+    }
+
+    .featured-desc {
+        font-size: 0.85rem;
+    }
+
+    .songs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+
+    .genre-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Player */
+    .player-bar {
+        grid-column: 1;
+        grid-template-columns: 1fr auto;
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .player-controls {
+        order: -1;
+        grid-column: 1 / -1;
+        display: none;
+    }
+
+    .player-extra {
+        display: none;
+    }
+
+    .player-song-info {
+        flex: 1;
+    }
+
+    .player-cover {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Mini player mode for mobile */
+    .player-bar {
+        grid-template-columns: 1fr auto auto;
+        height: 64px;
+    }
+
+    .player-song-info .btn-like {
+        display: none;
+    }
+
+    .player-bar .btn-play {
+        width: 36px;
+        height: 36px;
+    }
+
+    .player-bar .btn-play,
+    .player-bar #btn-next {
+        display: flex;
+    }
+
+    .player-bar #btn-prev,
+    .player-bar #btn-shuffle,
+    .player-bar #btn-repeat {
+        display: none;
+    }
+
+    .player-buttons {
+        gap: 4px;
+    }
+
+    .player-progress {
+        display: none;
+    }
+
+    .player-controls {
+        display: flex;
+        flex-direction: row;
+    }
+
+    /* Song row */
+    .song-row {
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        padding: 8px 10px;
+    }
+
+    .song-row-num,
+    .song-row-play-icon {
+        display: none !important;
+    }
+
+    .song-row-duration {
+        display: none;
+    }
+
+    .song-row-actions {
+        opacity: 1;
+    }
+
+    .search-bar {
+        max-width: 100%;
+    }
+
+    /* Modal */
+    .modal {
+        width: 95%;
+        padding: 24px;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 400px) {
+    .songs-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .song-card {
+        padding: 10px;
+    }
+
+    .song-card-title {
+        font-size: 0.82rem;
+    }
+
+    .genre-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .genre-card {
+        min-height: 70px;
+        font-size: 0.9rem;
+        padding: 14px;
+    }
+}
