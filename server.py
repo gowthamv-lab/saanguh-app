@@ -16,19 +16,19 @@ import concurrent.futures
 import socketserver
 
 try:
-    from ytmusicapi import YTMusic
-    import yt_dlp
+    from ytmusicapi import YTMusic  # pyright: ignore[reportMissingImports]
+    import yt_dlp  # pyright: ignore[reportMissingImports]
     HAS_YT = True
     ytmusic = YTMusic()
 except ImportError:
     HAS_YT = False
-    print("⚠️ ytmusicapi or yt-dlp not installed. YouTube integration will be disabled.")
+    print("WARNING: ytmusicapi or yt-dlp not installed. YouTube integration will be disabled.")
 
 # Simple In-Memory Cache for Search Results and Stream URLs
 SEARCH_CACHE = {}
 STREAM_URL_CACHE = {}
 
-PORT = 3000
+PORT = int(os.environ.get("PORT", 3000))
 JIOSAAVN_BASE = "https://www.jiosaavn.com/api.php"
 
 
@@ -36,6 +36,14 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     """Handles static files, API proxy, and audio stream proxy."""
 
     def do_GET(self):
+        # Browsers request `/favicon.ico` automatically. If we don't have it,
+        # respond with an empty 204 instead of returning 404.
+        if self.path == "/favicon.ico":
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            return
+
         if self.path.startswith("/api/yt/stream/"):
             self.handle_yt_stream()
         elif self.path.startswith("/api/jio/stream"):
@@ -86,7 +94,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                     'noplaylist': True,
                     'extract_flat': False
                 }
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:  # pyright: ignore[reportPossiblyUnboundVariable]
                     info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
                     audio_url = info['url']
                     STREAM_URL_CACHE[video_id] = audio_url
@@ -398,7 +406,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         msg = str(args[0]) if args else ""
         if "/api/" in msg:
-            print(f"  🎵 API: {msg}")
+            print(f"  [API] {msg}")
         elif "/stream/" in msg:
             pass # Keep console clean
         elif any(msg.endswith(ext) for ext in ['.html', '.js', '.css']):
@@ -412,23 +420,20 @@ class ThreadingHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    server = ThreadingHTTPServer(("", PORT), ProxyHandler)
-    print(f"""
-╔══════════════════════════════════════════╗
-║        🔥 Saanguh Music Server 🔥        ║
-║   JioSaavn + YouTube Music Integrated    ║
-║                                          ║
-║   App:    http://localhost:{PORT}          ║
-║   API:    http://localhost:{PORT}/api/     ║
-╚══════════════════════════════════════════╝
-    """)
+    server = ThreadingHTTPServer(("0.0.0.0", PORT), ProxyHandler)
+    print("============================================")
+    print("       Saanguh Music Server")
+    print("   JioSaavn + YouTube Music Integrated")
+    print(f"   App: http://localhost:{PORT}")
+    print(f"   API: http://localhost:{PORT}/api/")
+    print("============================================")
     if HAS_YT:
-        print("✅ YouTube Music Search & Streaming ENABLED")
+        print("YouTube Music Search & Streaming ENABLED")
     else:
-        print("❌ YouTube Music DISABLED (missing ytmusicapi or yt-dlp)")
+        print("YouTube Music DISABLED (missing ytmusicapi or yt-dlp)")
         
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n🛑 Server stopped.")
+        print("\nServer stopped.")
         server.server_close()
