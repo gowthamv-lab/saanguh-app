@@ -361,52 +361,56 @@ const Player = {
     },
 
     updateMediaSession(song) {
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: song.title,
-                artist: song.artist || 'Unknown Artist',
-                album: song.album || 'Saanguh',
-                artwork: song.cover_url ? [
-                    { src: song.cover_url, sizes: '96x96', type: 'image/jpeg' },
-                    { src: song.cover_url, sizes: '128x128', type: 'image/jpeg' },
-                    { src: song.cover_url, sizes: '192x192', type: 'image/jpeg' },
-                    { src: song.cover_url, sizes: '256x256', type: 'image/jpeg' },
-                    { src: song.cover_url, sizes: '384x384', type: 'image/jpeg' },
-                    { src: song.cover_url, sizes: '512x512', type: 'image/jpeg' }
-                ] : []
-            });
+        try {
+            if ('mediaSession' in navigator && window.MediaMetadata) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: song.title,
+                    artist: song.artist || 'Unknown Artist',
+                    album: song.album || 'Saanguh',
+                    artwork: song.cover_url ? [
+                        { src: song.cover_url, sizes: '96x96', type: 'image/jpeg' },
+                        { src: song.cover_url, sizes: '128x128', type: 'image/jpeg' },
+                        { src: song.cover_url, sizes: '192x192', type: 'image/jpeg' },
+                        { src: song.cover_url, sizes: '256x256', type: 'image/jpeg' },
+                        { src: song.cover_url, sizes: '384x384', type: 'image/jpeg' },
+                        { src: song.cover_url, sizes: '512x512', type: 'image/jpeg' }
+                    ] : []
+                });
 
-            const safeSetAction = (action, handler) => {
-                try {
-                    navigator.mediaSession.setActionHandler(action, handler);
-                } catch (e) {
-                    console.warn(`MediaSession action ${action} not supported`);
-                }
-            };
+                const safeSetAction = (action, handler) => {
+                    try {
+                        navigator.mediaSession.setActionHandler(action, handler);
+                    } catch (e) {
+                        console.warn(`MediaSession action ${action} not supported`);
+                    }
+                };
 
-            safeSetAction('play', () => this.togglePlay());
-            safeSetAction('pause', () => this.togglePlay());
-            safeSetAction('previoustrack', () => this.previous());
-            safeSetAction('nexttrack', () => this.next());
-            
-            safeSetAction('seekbackward', (details) => {
-                const skipTime = details.seekOffset || 10;
-                this.audio.currentTime = Math.max(this.audio.currentTime - skipTime, 0);
-                this.updatePositionState();
-            });
-            safeSetAction('seekforward', (details) => {
-                const skipTime = details.seekOffset || 10;
-                this.audio.currentTime = Math.min(this.audio.currentTime + skipTime, this.audio.duration);
-                this.updatePositionState();
-            });
-            safeSetAction('seekto', (details) => {
-                if (details.fastSeek && 'fastSeek' in this.audio) {
-                  this.audio.fastSeek(details.seekTime);
-                } else {
-                  this.audio.currentTime = details.seekTime;
-                }
-                this.updatePositionState();
-            });
+                safeSetAction('play', () => this.togglePlay());
+                safeSetAction('pause', () => this.togglePlay());
+                safeSetAction('previoustrack', () => this.previous());
+                safeSetAction('nexttrack', () => this.next());
+                
+                safeSetAction('seekbackward', (details) => {
+                    const skipTime = details.seekOffset || 10;
+                    this.audio.currentTime = Math.max(this.audio.currentTime - skipTime, 0);
+                    this.updatePositionState();
+                });
+                safeSetAction('seekforward', (details) => {
+                    const skipTime = details.seekOffset || 10;
+                    this.audio.currentTime = Math.min(this.audio.currentTime + skipTime, this.audio.duration);
+                    this.updatePositionState();
+                });
+                safeSetAction('seekto', (details) => {
+                    if (details.fastSeek && 'fastSeek' in this.audio) {
+                      this.audio.fastSeek(details.seekTime);
+                    } else {
+                      this.audio.currentTime = details.seekTime;
+                    }
+                    this.updatePositionState();
+                });
+            }
+        } catch (e) {
+            console.error('MediaSession error:', e);
         }
     },
 

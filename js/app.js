@@ -7,29 +7,39 @@ const App = {
     searchTimeout: null,
 
     async init() {
-        // Initialize modules
-        Auth.init();
-        Playlists.init();
-        Favorites.init();
-        Downloads.init();
-        Player.init();
+        // Initialize modules safely
+        const safeInit = (fn) => { try { fn(); } catch(e) { console.error('Init error:', e); } };
+        
+        safeInit(() => Auth.init());
+        safeInit(() => Playlists.init());
+        safeInit(() => Favorites.init());
+        safeInit(() => Downloads.init());
+        safeInit(() => Player.init());
 
-        // Set up event listeners
-        this.setupNavigation();
-        this.setupAuthModal();
-        this.setupPlaylistModal();
-        this.setupSearch();
-        this.setupMobileMenu();
+        // Set up event listeners safely
+        safeInit(() => this.setupNavigation());
+        safeInit(() => this.setupAuthModal());
+        safeInit(() => this.setupPlaylistModal());
+        safeInit(() => this.setupSearch());
+        safeInit(() => this.setupMobileMenu());
 
         // Set greeting based on time
-        this.setGreeting();
+        safeInit(() => this.setGreeting());
 
         // Load home page content
-        await this.loadHomePage();
+        try {
+            await this.loadHomePage();
+        } catch (e) {
+            console.error('Home page load error:', e);
+        }
 
         // Handle initial hash
-        const hash = window.location.hash.replace('#', '') || 'home';
-        this.navigateTo(hash);
+        try {
+            const hash = window.location.hash.replace('#', '') || 'home';
+            this.navigateTo(hash);
+        } catch (e) {
+            console.error('Navigation error:', e);
+        }
     },
 
     // ===============================
