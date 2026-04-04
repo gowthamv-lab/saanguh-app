@@ -64,19 +64,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   // For same-origin static assets: network first, cache fallback
-  event.waitUntil(
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Update cache with fresh response
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => {
-          // Network failed, try cache
-          return caches.match(event.request);
-        })
-    )
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        // Update cache with fresh response
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => {
+        // Network failed, try cache
+        return caches.match(event.request);
+      })
   );
 });
