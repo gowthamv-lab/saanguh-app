@@ -251,3 +251,175 @@
     0%, 100% { transform: scaleY(0.4); }
     50% { transform: scaleY(1); }
 }
+
+/* ===============================
+   Expanded Mobile Player
+   =============================== */
+.player-collapse {
+    display: none; /* hidden by default */
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 8px;
+    z-index: 60;
+}
+
+/* Base states for mobile expansion */
+@media (max-width: 768px) {
+    .player-bar {
+        transition: transform var(--transition-normal), height var(--transition-normal), border-radius var(--transition-normal);
+        cursor: pointer;
+    }
+    
+    .player-bar.expanded {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 80px 30px 40px;
+        background: var(--bg-primary);
+        cursor: default;
+    }
+    
+    .player-bar.expanded .player-collapse {
+        display: flex;
+    }
+    
+    .player-bar.expanded .player-song-info {
+        flex-direction: column;
+        text-align: center;
+        width: 100%;
+        margin-bottom: 30px;
+        flex: none;
+    }
+    
+    .player-bar.expanded .player-cover {
+        width: 100%;
+        aspect-ratio: 1;
+        max-width: 350px;
+        height: auto;
+        border-radius: var(--border-radius-lg);
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .player-bar.expanded .player-text {
+        width: 100%;
+    }
+    
+    .player-bar.expanded .player-title {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+    }
+    
+    .player-bar.expanded .player-artist {
+        font-size: 1.1rem;
+    }
+    
+    .player-bar.expanded .player-song-info .btn-like {
+        display: flex;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        transform: translateY(-100%);
+    }
+
+    .player-bar.expanded .player-progress {
+        display: flex;
+        width: 100%;
+        margin-bottom: 30px;
+    }
+
+    .player-bar.expanded .player-controls {
+        display: flex;
+        width: 100%;
+        margin-bottom: 30px;
+    }
+    
+    .player-bar.expanded .player-buttons {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .player-bar.expanded .btn-play {
+        width: 60px;
+        height: 60px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .player-bar.expanded .btn-play svg {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .player-bar.expanded #btn-prev,
+    .player-bar.expanded #btn-shuffle,
+    .player-bar.expanded #btn-repeat {
+        display: flex;
+    }
+
+    .player-bar.expanded .player-extra {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .player-bar.expanded .volume-control {
+        display: none; /* Usually hidden on mobile full player, controlled by hardware */
+    }
+}
+
+/* ===============================
+   Queue Panel
+   =============================== */
+.queue-panel {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    height: 70vh;
+    background: var(--bg-secondary);
+    border-top-left-radius: var(--border-radius-xl);
+    border-top-right-radius: var(--border-radius-xl);
+    z-index: 1100;
+    transition: bottom var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    padding: 20px 24px;
+}
+
+.queue-panel.open {
+    bottom: 0;
+}
+
+.queue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.queue-header h3 {
+    font-size: 1.2rem;
+}
+
+.queue-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}

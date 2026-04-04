@@ -11,6 +11,7 @@ const App = {
         Auth.init();
         Playlists.init();
         Favorites.init();
+        Downloads.init();
         Player.init();
 
         // Set up event listeners
@@ -65,6 +66,7 @@ const App = {
 
             // Load page-specific content
             if (page === 'favorites') this.renderFavorites();
+            if (page === 'downloads') this.renderDownloads();
             if (page === 'search') document.getElementById('search-input').focus();
         }
 
@@ -112,6 +114,7 @@ const App = {
         const genres = [
             { name: 'Tamil Hits', color: 'linear-gradient(135deg, #e74c3c, #c0392b)', query: 'Tamil hits 2025' },
             { name: 'Anirudh', color: 'linear-gradient(135deg, #8B5CF6, #6D28D9)', query: 'Anirudh Ravichander' },
+            { name: 'GV Prakash', color: 'linear-gradient(135deg, #f59e0b, #d97706)', query: 'GV Prakash Kumar' },
             { name: 'A.R. Rahman', color: 'linear-gradient(135deg, #3498db, #2980b9)', query: 'AR Rahman Tamil' },
             { name: 'Yuvan', color: 'linear-gradient(135deg, #e67e22, #d35400)', query: 'Yuvan Shankar Raja' },
             { name: 'Melody', color: 'linear-gradient(135deg, #EC4899, #DB2777)', query: 'Tamil melody songs' },
@@ -191,6 +194,25 @@ const App = {
         }
 
         this.renderSongList('favorites-list', favorites);
+    },
+
+    // ===============================
+    // Downloads
+    // ===============================
+    renderDownloads() {
+        const downloads = Downloads.getAll();
+        document.getElementById('downloads-count').textContent = `${downloads.length} song${downloads.length !== 1 ? 's' : ''}`;
+
+        if (downloads.length === 0) {
+            document.getElementById('downloads-list').innerHTML = `
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <p>Songs you download will appear here</p>
+                </div>`;
+            return;
+        }
+
+        this.renderSongList('downloads-list', downloads);
     },
 
     // ===============================
@@ -278,6 +300,9 @@ const App = {
                     <button class="btn-icon" onclick="event.stopPropagation(); Playlists.showAddToPlaylistMenu(App._getSong('${containerId}', ${i}), event.clientX, event.clientY)" title="Add to playlist">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
+                    <button class="btn-icon" onclick="event.stopPropagation(); App.downloadSong(App._getSong('${containerId}', ${i}))" title="Download Song">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </button>
                     <button class="btn-icon" onclick="event.stopPropagation(); App.showVideoSearch(App._getSong('${containerId}', ${i}))" title="Watch Video">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>
                     </button>
@@ -290,6 +315,24 @@ const App = {
 
         // Highlight current playing song
         Player.highlightCurrentSong();
+    },
+
+    downloadSong(song) {
+        if (!song || !song.audio_url) {
+            this.showToast('Download URL not available.');
+            return;
+        }
+        this.showToast(`Starting download: ${song.title}`);
+        const link = document.createElement('a');
+        link.href = song.audio_url;
+        link.target = "_blank";
+        link.download = `${song.title} - ${song.artist}.mp3`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Add to local downloads list
+        Downloads.add(song);
     },
 
     playSong(index, containerId) {
@@ -373,6 +416,10 @@ const App = {
 
         // Auth button click
         document.getElementById('btn-auth').addEventListener('click', showModal);
+        const mobileAuthBtn = document.getElementById('mobile-btn-auth');
+        if (mobileAuthBtn) {
+            mobileAuthBtn.addEventListener('click', showModal);
+        }
 
         // Close modal
         document.getElementById('modal-close').addEventListener('click', () => {

@@ -624,20 +624,34 @@ body {
 }
 
 /* ===============================
-   Mobile Menu Toggle
+   Mobile Top Bar
    =============================== */
-.mobile-menu-toggle {
+.mobile-top-bar {
     display: none;
     position: fixed;
-    top: 16px;
-    left: 16px;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
     z-index: 200;
+    background: linear-gradient(to bottom, rgba(10,10,15,0.9) 0%, transparent 100%);
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.mobile-top-bar > * {
+    pointer-events: auto;
+}
+
+.mobile-menu-toggle, .mobile-auth-btn {
     background: var(--bg-glass-strong);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     width: 44px;
     height: 44px;
     border-radius: var(--border-radius-sm);
+    display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;

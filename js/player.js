@@ -47,6 +47,48 @@ const Player = {
             }
         });
 
+        // Expanded mobile player handling
+        const playerBar = document.getElementById('player-bar');
+        const collapseBtn = document.getElementById('btn-collapse-player');
+
+        playerBar.addEventListener('click', (e) => {
+            // Expand on mobile if clicking the bar itself (but not controls or buttons)
+            if (window.innerWidth <= 768 && !e.target.closest('button, .progress-bar, .volume-control, .player-extra')) {
+                playerBar.classList.add('expanded');
+            }
+        });
+
+        if (collapseBtn) {
+            collapseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playerBar.classList.remove('expanded');
+            });
+        }
+
+        // Queue Panel handling
+        const queueBtn = document.getElementById('btn-queue');
+        const closeQueueBtn = document.getElementById('btn-close-queue');
+        const queuePanel = document.getElementById('queue-panel');
+
+        if (queueBtn && queuePanel) {
+            queueBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (queuePanel.classList.contains('open')) {
+                    queuePanel.classList.remove('open');
+                } else {
+                    queuePanel.classList.add('open');
+                    this.renderQueue();
+                }
+            });
+        }
+
+        if (closeQueueBtn) {
+            closeQueueBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                queuePanel.classList.remove('open');
+            });
+        }
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
@@ -207,12 +249,14 @@ const Player = {
         this.isPlaying = true;
         document.getElementById('icon-play').style.display = 'none';
         document.getElementById('icon-pause').style.display = 'block';
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
     },
 
     onPause() {
         this.isPlaying = false;
         document.getElementById('icon-play').style.display = 'block';
         document.getElementById('icon-pause').style.display = 'none';
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
     },
 
     onSongEnd() {
@@ -284,6 +328,33 @@ const Player = {
         }
     },
 
+    renderQueue() {
+        const queueList = document.getElementById('queue-list');
+        if (!queueList) return;
+
+        if (this.queue.length === 0) {
+            queueList.innerHTML = '<div class="empty-state"><p>Queue is empty</p></div>';
+            return;
+        }
+
+        const startIndex = Math.max(0, this.currentIndex);
+        const upcomingSongs = this.queue.slice(startIndex, startIndex + 20); // show next 20
+
+        queueList.innerHTML = upcomingSongs.map((song, i) => `
+            <div class="song-row ${i === 0 ? 'playing' : ''}" style="grid-template-columns: 1fr auto; padding: 10px; cursor: pointer;" onclick="event.stopPropagation(); Player.play(Player.queue[${startIndex + i}], Player.queue, ${startIndex + i}); document.getElementById('queue-panel').classList.remove('open');">
+                <div class="song-row-info">
+                    <div class="song-row-cover" style="width:36px; height:36px; border-radius:4px; overflow:hidden; background:var(--bg-glass);">
+                        ${song.cover_url ? `<img src="${song.cover_url}" alt="" style="width:100%;height:100%;object-fit:cover;">` : ''}
+                    </div>
+                    <div class="song-row-text" style="margin-left: 10px;">
+                        <div class="song-row-title" style="font-size:0.9rem">${song.title}</div>
+                        <div class="song-row-artist" style="font-size:0.8rem; color:var(--text-secondary);">${song.artist}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    },
+
     updateMediaSession(song) {
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
@@ -291,7 +362,12 @@ const Player = {
                 artist: song.artist,
                 album: song.album,
                 artwork: song.cover_url ? [
-                    { src: song.cover_url, sizes: '500x500', type: 'image/jpeg' }
+                    { src: song.cover_url, sizes: '96x96', type: 'image/jpeg' },
+                    { src: song.cover_url, sizes: '128x128', type: 'image/jpeg' },
+                    { src: song.cover_url, sizes: '192x192', type: 'image/jpeg' },
+                    { src: song.cover_url, sizes: '256x256', type: 'image/jpeg' },
+                    { src: song.cover_url, sizes: '384x384', type: 'image/jpeg' },
+                    { src: song.cover_url, sizes: '512x512', type: 'image/jpeg' }
                 ] : []
             });
 

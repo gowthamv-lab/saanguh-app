@@ -49,6 +49,10 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     <span>Favorites</span>
                 </a>
+                <a href="#downloads" class="nav-link" data-page="downloads" id="nav-downloads">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Downloads</span>
+                </a>
             </nav>
 
             <div class="sidebar-section">
@@ -73,10 +77,15 @@
             </div>
         </aside>
 
-        <!-- Mobile Menu Toggle -->
-        <button id="mobile-menu-toggle" class="mobile-menu-toggle">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
+        <!-- Mobile Top Bar -->
+        <div class="mobile-top-bar">
+            <button id="mobile-menu-toggle" class="mobile-menu-toggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <button class="mobile-auth-btn" id="mobile-btn-auth">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </button>
+        </div>
 
         <!-- Main Content -->
         <main id="main-content" class="main-content">
@@ -171,6 +180,25 @@
                 </div>
             </section>
 
+            <!-- Downloads Page -->
+            <section id="page-downloads" class="page">
+                <div class="page-header favorites-header">
+                    <div class="favorites-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="page-title">Downloaded Musics</h2>
+                        <p class="page-subtitle" id="downloads-count">0 songs</p>
+                    </div>
+                </div>
+                <div id="downloads-list" class="songs-list">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <p>Songs you download will appear here</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- Playlist Detail Page -->
             <section id="page-playlist" class="page">
                 <div class="page-header playlist-detail-header">
@@ -191,7 +219,10 @@
 
         <!-- Music Player Bar -->
         <div id="player-bar" class="player-bar">
-            <div class="player-song-info">
+            <button class="player-collapse" id="btn-collapse-player">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="player-song-info" id="player-song-info">
                 <div class="player-cover" id="player-cover">
                     <img src="" alt="" id="player-cover-img">
                     <div class="player-cover-placeholder">
@@ -247,6 +278,19 @@
                     <div class="volume-bar" id="volume-bar">
                         <div class="volume-fill" id="volume-fill" style="width:80%"></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Queue Panel -->
+            <div id="queue-panel" class="queue-panel">
+                <div class="queue-header">
+                    <h3>Up Next</h3>
+                    <button class="btn-icon" id="btn-close-queue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div id="queue-list" class="queue-list">
+                    <!-- Queue items populated here -->
                 </div>
             </div>
         </div>
@@ -318,6 +362,7 @@
     <script src="js/player.js"></script>
     <script src="js/playlists.js"></script>
     <script src="js/favorites.js"></script>
+    <script src="js/downloads.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
