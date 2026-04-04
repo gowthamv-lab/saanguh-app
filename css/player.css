@@ -302,6 +302,7 @@
         width: 100%;
         margin-bottom: 30px;
         flex: none;
+        order: 1;
     }
     
     .player-bar.expanded .player-cover {
@@ -338,18 +339,22 @@
     .player-bar.expanded .player-progress {
         display: flex;
         width: 100%;
-        margin-bottom: 30px;
+        margin-bottom: 24px;
+        order: 1;
     }
 
     .player-bar.expanded .player-controls {
         display: flex;
+        flex-direction: column;
         width: 100%;
         margin-bottom: 30px;
+        order: 2;
     }
     
     .player-bar.expanded .player-buttons {
         width: 100%;
         justify-content: space-between;
+        order: 2;
     }
     
     .player-bar.expanded .btn-play {
@@ -372,6 +377,7 @@
         display: flex;
         width: 100%;
         justify-content: space-between;
+        order: 3;
     }
     
     .player-bar.expanded .volume-control {
