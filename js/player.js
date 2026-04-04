@@ -363,20 +363,26 @@ const Player = {
     updateMediaSession(song) {
         try {
             if ('mediaSession' in navigator && window.MediaMetadata) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: song.title,
+                // Build artwork array - only include if cover_url exists and is valid
+                const artwork = [];
+                if (song.cover_url && song.cover_url.length > 0) {
+                    artwork.push({ src: song.cover_url, sizes: '512x512' });
+                    artwork.push({ src: song.cover_url, sizes: '256x256' });
+                    artwork.push({ src: song.cover_url, sizes: '192x192' });
+                    artwork.push({ src: song.cover_url, sizes: '96x96' });
+                }
+
+                const metadata = new MediaMetadata({
+                    title: song.title || 'Unknown',
                     artist: song.artist || 'Unknown Artist',
                     album: song.album || 'Saanguh',
-                    artwork: song.cover_url ? [
-                        { src: song.cover_url, sizes: '96x96', type: 'image/jpeg' },
-                        { src: song.cover_url, sizes: '128x128', type: 'image/jpeg' },
-                        { src: song.cover_url, sizes: '192x192', type: 'image/jpeg' },
-                        { src: song.cover_url, sizes: '256x256', type: 'image/jpeg' },
-                        { src: song.cover_url, sizes: '384x384', type: 'image/jpeg' },
-                        { src: song.cover_url, sizes: '512x512', type: 'image/jpeg' }
-                    ] : []
+                    artwork: artwork
                 });
 
+                navigator.mediaSession.metadata = metadata;
+                console.log('MediaSession metadata set:', song.title, '| artwork:', artwork.length > 0 ? song.cover_url : 'none');
+
+                // Set action handlers
                 const safeSetAction = (action, handler) => {
                     try {
                         navigator.mediaSession.setActionHandler(action, handler);
@@ -385,8 +391,12 @@ const Player = {
                     }
                 };
 
-                safeSetAction('play', () => this.togglePlay());
-                safeSetAction('pause', () => this.togglePlay());
+                safeSetAction('play', () => {
+                    this.audio.play();
+                });
+                safeSetAction('pause', () => {
+                    this.audio.pause();
+                });
                 safeSetAction('previoustrack', () => this.previous());
                 safeSetAction('nexttrack', () => this.next());
                 
@@ -408,6 +418,9 @@ const Player = {
                     }
                     this.updatePositionState();
                 });
+
+                // Set initial playback state
+                navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
             }
         } catch (e) {
             console.error('MediaSession error:', e);
