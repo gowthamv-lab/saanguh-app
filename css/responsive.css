@@ -120,8 +120,6 @@
     }
 
     .player-controls {
-        order: -1;
-        grid-column: 1 / -1;
         display: none;
     }
 
