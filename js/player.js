@@ -376,22 +376,30 @@ const Player = {
                 ] : []
             });
 
-            navigator.mediaSession.setActionHandler('play', () => this.togglePlay());
-            navigator.mediaSession.setActionHandler('pause', () => this.togglePlay());
-            navigator.mediaSession.setActionHandler('previoustrack', () => this.previous());
-            navigator.mediaSession.setActionHandler('nexttrack', () => this.next());
+            const safeSetAction = (action, handler) => {
+                try {
+                    navigator.mediaSession.setActionHandler(action, handler);
+                } catch (e) {
+                    console.warn(`MediaSession action ${action} not supported`);
+                }
+            };
+
+            safeSetAction('play', () => this.togglePlay());
+            safeSetAction('pause', () => this.togglePlay());
+            safeSetAction('previoustrack', () => this.previous());
+            safeSetAction('nexttrack', () => this.next());
             
-            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+            safeSetAction('seekbackward', (details) => {
                 const skipTime = details.seekOffset || 10;
                 this.audio.currentTime = Math.max(this.audio.currentTime - skipTime, 0);
                 this.updatePositionState();
             });
-            navigator.mediaSession.setActionHandler('seekforward', (details) => {
+            safeSetAction('seekforward', (details) => {
                 const skipTime = details.seekOffset || 10;
                 this.audio.currentTime = Math.min(this.audio.currentTime + skipTime, this.audio.duration);
                 this.updatePositionState();
             });
-            navigator.mediaSession.setActionHandler('seekto', (details) => {
+            safeSetAction('seekto', (details) => {
                 if (details.fastSeek && 'fastSeek' in this.audio) {
                   this.audio.fastSeek(details.seekTime);
                 } else {
