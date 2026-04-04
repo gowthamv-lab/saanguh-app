@@ -1,0 +1,25 @@
+{
+  "name": "Saanguh — Feel the Music",
+  "short_name": "Saanguh",
+  "description": "Premium Tamil music streaming app. Stream, discover, and vibe with your favorite songs.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait",
+  "categories": ["music", "entertainment"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%230a0a0f'/><circle cx='96' cy='96' r='60' stroke='%238B5CF6' stroke-width='6' fill='none'/><circle cx='96' cy='96' r='24' fill='%23EC4899'/><line x1='96' y1='36' x2='96' y2='96' stroke='%238B5CF6' stroke-width='6'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='64' fill='%230a0a0f'/><circle cx='256' cy='256' r='160' stroke='%238B5CF6' stroke-width='12' fill='none'/><circle cx='256' cy='256' r='64' fill='%23EC4899'/><line x1='256' y1='96' x2='256' y2='256' stroke='%238B5CF6' stroke-width='12'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

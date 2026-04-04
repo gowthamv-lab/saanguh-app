@@ -12,6 +12,10 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/player.css">
     <link rel="stylesheet" href="css/responsive.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8B5CF6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
     <div id="app">
@@ -364,5 +368,16 @@
     <script src="js/favorites.js"></script>
     <script src="js/downloads.js"></script>
     <script src="js/app.js"></script>
+
+    <!-- Service Worker Registration for PWA + Lock Screen Controls -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.warn('SW registration failed:', err));
+            });
+        }
+    </script>
 </body>
 </html>
