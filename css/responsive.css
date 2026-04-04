@@ -36,6 +36,10 @@
 
 /* Mobile */
 @media (max-width: 768px) {
+    :root {
+        --player-height: calc(85px + env(safe-area-inset-bottom, 12px));
+    }
+
     #app {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr var(--player-height);
@@ -137,9 +141,10 @@
     }
 
     /* Mini player mode for mobile */
-    .player-bar {
+    .player-bar:not(.expanded) {
         grid-template-columns: 1fr auto auto;
-        height: 64px;
+        height: var(--player-height);
+        padding-bottom: env(safe-area-inset-bottom, 12px);
     }
 
     .player-song-info .btn-like {

@@ -208,6 +208,7 @@ const Player = {
         const percent = (e.clientX - rect.left) / rect.width;
         if (this.audio.duration) {
             this.audio.currentTime = percent * this.audio.duration;
+            this.updatePositionState();
         }
     },
 
@@ -249,7 +250,10 @@ const Player = {
         this.isPlaying = true;
         document.getElementById('icon-play').style.display = 'none';
         document.getElementById('icon-pause').style.display = 'block';
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+            this.updatePositionState();
+        }
     },
 
     onPause() {
@@ -270,6 +274,7 @@ const Player = {
 
     onMetadataLoaded() {
         document.getElementById('time-total').textContent = this.formatTime(this.audio.duration);
+        this.updatePositionState();
     },
 
     onError(e) {
@@ -359,8 +364,8 @@ const Player = {
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: song.title,
-                artist: song.artist,
-                album: song.album,
+                artist: song.artist || 'Unknown Artist',
+                album: song.album || 'Saanguh',
                 artwork: song.cover_url ? [
                     { src: song.cover_url, sizes: '96x96', type: 'image/jpeg' },
                     { src: song.cover_url, sizes: '128x128', type: 'image/jpeg' },
@@ -375,6 +380,37 @@ const Player = {
             navigator.mediaSession.setActionHandler('pause', () => this.togglePlay());
             navigator.mediaSession.setActionHandler('previoustrack', () => this.previous());
             navigator.mediaSession.setActionHandler('nexttrack', () => this.next());
+            
+            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+                const skipTime = details.seekOffset || 10;
+                this.audio.currentTime = Math.max(this.audio.currentTime - skipTime, 0);
+                this.updatePositionState();
+            });
+            navigator.mediaSession.setActionHandler('seekforward', (details) => {
+                const skipTime = details.seekOffset || 10;
+                this.audio.currentTime = Math.min(this.audio.currentTime + skipTime, this.audio.duration);
+                this.updatePositionState();
+            });
+            navigator.mediaSession.setActionHandler('seekto', (details) => {
+                if (details.fastSeek && 'fastSeek' in this.audio) {
+                  this.audio.fastSeek(details.seekTime);
+                } else {
+                  this.audio.currentTime = details.seekTime;
+                }
+                this.updatePositionState();
+            });
+        }
+    },
+
+    updatePositionState() {
+        if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+            if (this.audio && this.audio.duration && !isNaN(this.audio.duration)) {
+                navigator.mediaSession.setPositionState({
+                    duration: this.audio.duration,
+                    playbackRate: this.audio.playbackRate || 1,
+                    position: this.audio.currentTime
+                });
+            }
         }
     },
 
