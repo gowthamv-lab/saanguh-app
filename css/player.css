@@ -384,15 +384,16 @@
    =============================== */
 .queue-panel {
     position: fixed;
-    bottom: -100%;
+    bottom: 0;
     left: 0;
     right: 0;
     height: 70vh;
+    transform: translateY(100vh);
     background: var(--bg-secondary);
     border-top-left-radius: var(--border-radius-xl);
     border-top-right-radius: var(--border-radius-xl);
     z-index: 1100;
-    transition: bottom var(--transition-normal);
+    transition: transform var(--transition-normal);
     display: flex;
     flex-direction: column;
     box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
@@ -400,7 +401,7 @@
 }
 
 .queue-panel.open {
-    bottom: 0;
+    transform: translateY(0);
 }
 
 .queue-header {
