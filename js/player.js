@@ -11,6 +11,7 @@ const Player = {
     isShuffle: false,
     repeatMode: 0, // 0: off, 1: all, 2: one
     volume: 0.8,
+    _fallbackLevel: 0, // 0=none, 1=full fallback tried, 2=title-only tried
 
     init() {
         this.audio = document.getElementById('audio-player');
@@ -119,14 +120,25 @@ const Player = {
         });
     },
 
-    // Play a song
+    // ─── Play a song ──────────────────────────────────────────
     play(song, queue = null, index = -1) {
         if (!song || !song.audio_url) {
-            App.showToast('This song is not available for streaming');
+            // No audio URL at all — try multi-source fallback immediately
+            if (song && song.title) {
+                console.log('No audio_url, trying multi-source fallback for:', song.title);
+                this._fallbackLevel = 0;
+                this._tryFallback(song, queue, index);
+                return;
+            }
+            // Absolutely nothing to play — silently skip
+            App.showToast('Skipping to next song...');
+            setTimeout(() => this.next(), 500);
             return;
         }
 
         this.currentSong = song;
+        this._fallbackLevel = 0; // Reset for new song
+        this._originalSong = { ...song }; // Keep original for retries
         if (queue) {
             this.queue = queue;
             this.currentIndex = index;
@@ -135,20 +147,80 @@ const Player = {
         this.audio.src = song.audio_url;
         this.audio.play().catch(err => {
             console.error('Play error:', err);
-            App.showToast('Unable to play this song');
+            this._tryFallback(this._originalSong || song, this.queue, this.currentIndex);
         });
 
         // Update UI
         this.updatePlayerUI(song);
-
-        // Add to recently played
         Songs.addToRecent(song);
-
-        // Update song rows to show current playing
         this.highlightCurrentSong();
-
-        // Update media session (for OS-level controls)
         this.updateMediaSession(song);
+    },
+
+    // ─── Multi-Source Fallback Chain ─────────────────────────
+    // Level 0→1: Try server /api/fallback/stream (cascades through
+    //            YouTube Music → YouTube → SoundCloud with full query)
+    // Level 1→2: Try again with title-only query (broader search)
+    // Level 2+:  Give up, auto-skip to next song
+    //
+    // The server itself tries MULTIPLE sources and query variants
+    // internally, so each client call already covers a LOT of ground.
+    // ─────────────────────────────────────────────────────────────
+    async _tryFallback(song, queue, index) {
+        this._fallbackLevel++;
+
+        if (this._fallbackLevel > 2) {
+            // All levels exhausted — silently skip to next
+            console.log('All fallback levels exhausted, auto-skipping...');
+            App.showToast('Skipping to next... ⏭️');
+            setTimeout(() => this.next(), 800);
+            return;
+        }
+
+        const title = encodeURIComponent(song.title || '');
+        const artist = encodeURIComponent(song.artist || '');
+
+        // Level 1: full query (title + artist)
+        // Level 2: title-only (broader match)
+        let fallbackUrl;
+        let toastMsg;
+        if (this._fallbackLevel === 1) {
+            fallbackUrl = `/api/fallback/stream?title=${title}&artist=${artist}`;
+            toastMsg = 'Searching alternate sources... 🔄';
+        } else {
+            fallbackUrl = `/api/fallback/stream?title=${title}`;
+            toastMsg = 'Broadening search... 🔍';
+        }
+
+        console.log(`🔄 Fallback Level ${this._fallbackLevel} for: ${song.title}`);
+        App.showToast(toastMsg);
+
+        // Update the song object with fallback URL
+        const fallbackSong = { ...song, audio_url: fallbackUrl };
+        this.currentSong = fallbackSong;
+        if (queue) {
+            this.queue = queue;
+            this.currentIndex = index;
+        }
+        if (queue && index >= 0 && index < queue.length) {
+            queue[index] = fallbackSong;
+        }
+
+        this.audio.src = fallbackUrl;
+        try {
+            await this.audio.play();
+            console.log(`✅ Fallback Level ${this._fallbackLevel} playback started!`);
+            App.showToast('Playing from alternate source ✅');
+        } catch (err) {
+            console.error(`Fallback Level ${this._fallbackLevel} failed:`, err);
+            // Recursively try next level
+            this._tryFallback(song, queue, index);
+            return;
+        }
+
+        this.updatePlayerUI(fallbackSong);
+        this.highlightCurrentSong();
+        this.updateMediaSession(fallbackSong);
     },
 
     togglePlay() {
@@ -278,9 +350,18 @@ const Player = {
     },
 
     onError(e) {
-        console.error('Audio error:', e);
-        // Try next song
-        setTimeout(() => this.next(), 1000);
+        console.error('Audio stream error:', e);
+        // Try multi-source fallback (uses _fallbackLevel to avoid infinite loops)
+        if (this.currentSong && this._fallbackLevel < 2) {
+            const originalSong = this._originalSong || this.currentSong;
+            console.log(`Stream error at level ${this._fallbackLevel}, retrying:`, originalSong.title);
+            this._tryFallback(originalSong, this.queue, this.currentIndex);
+        } else {
+            // All sources failed — silently skip to next
+            console.log('All sources failed, skipping...');
+            App.showToast('Skipping to next... ⏭️');
+            setTimeout(() => this.next(), 800);
+        }
     },
 
     // UI Updates
