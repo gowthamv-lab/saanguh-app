@@ -145,6 +145,10 @@ const Player = {
         }
 
         this.audio.src = song.audio_url;
+
+        // Update Media Session BEFORE play() so Chinese Android skins catch the metadata
+        this.updateMediaSession(song);
+
         this.audio.play().catch(err => {
             console.error('Play error:', err);
             this._tryFallback(this._originalSong || song, this.queue, this.currentIndex);
@@ -154,7 +158,6 @@ const Player = {
         this.updatePlayerUI(song);
         Songs.addToRecent(song);
         this.highlightCurrentSong();
-        this.updateMediaSession(song);
     },
 
     // ─── Multi-Source Fallback Chain ─────────────────────────
@@ -207,6 +210,10 @@ const Player = {
         }
 
         this.audio.src = fallbackUrl;
+
+        // Update Media Session BEFORE play() so Chinese Android skins catch the metadata
+        this.updateMediaSession(fallbackSong);
+
         try {
             await this.audio.play();
             console.log(`✅ Fallback Level ${this._fallbackLevel} playback started!`);
@@ -220,7 +227,6 @@ const Player = {
 
         this.updatePlayerUI(fallbackSong);
         this.highlightCurrentSong();
-        this.updateMediaSession(fallbackSong);
     },
 
     togglePlay() {
@@ -444,23 +450,27 @@ const Player = {
     updateMediaSession(song) {
         try {
             if ('mediaSession' in navigator && window.MediaMetadata) {
-                // Build artwork array - only include if cover_url exists and is valid
+                // Build artwork array - fallback to a valid URL to prevent Android from silently dropping notification
                 const artwork = [];
-                if (song.cover_url && song.cover_url.length > 0) {
-                    let coverUrl = song.cover_url;
-                    if (coverUrl.startsWith('/')) {
-                        coverUrl = window.location.origin + coverUrl;
-                    } else if (!coverUrl.startsWith('http')) {
-                        coverUrl = window.location.origin + '/' + coverUrl;
-                    }
-
-                    artwork.push({ src: coverUrl, sizes: '96x96', type: 'image/jpeg' });
-                    artwork.push({ src: coverUrl, sizes: '128x128', type: 'image/jpeg' });
-                    artwork.push({ src: coverUrl, sizes: '192x192', type: 'image/jpeg' });
-                    artwork.push({ src: coverUrl, sizes: '256x256', type: 'image/jpeg' });
-                    artwork.push({ src: coverUrl, sizes: '384x384', type: 'image/jpeg' });
-                    artwork.push({ src: coverUrl, sizes: '512x512', type: 'image/jpeg' });
+                let coverUrl = song.cover_url;
+                
+                if (!coverUrl || coverUrl.length === 0) {
+                    // Fallback absolute URL so MediaSession doesn't fail
+                    coverUrl = 'https://ui-avatars.com/api/?name=Music&background=8B5CF6&color=fff&size=512';
                 }
+
+                if (coverUrl.startsWith('/')) {
+                    coverUrl = window.location.origin + coverUrl;
+                } else if (!coverUrl.startsWith('http')) {
+                    coverUrl = window.location.origin + '/' + coverUrl;
+                }
+
+                artwork.push({ src: coverUrl, sizes: '96x96', type: 'image/jpeg' });
+                artwork.push({ src: coverUrl, sizes: '128x128', type: 'image/jpeg' });
+                artwork.push({ src: coverUrl, sizes: '192x192', type: 'image/jpeg' });
+                artwork.push({ src: coverUrl, sizes: '256x256', type: 'image/jpeg' });
+                artwork.push({ src: coverUrl, sizes: '384x384', type: 'image/jpeg' });
+                artwork.push({ src: coverUrl, sizes: '512x512', type: 'image/jpeg' });
 
                 const metadata = new MediaMetadata({
                     title: song.title || 'Unknown',
