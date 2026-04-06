@@ -92,18 +92,6 @@ const App = {
         // Load genres
         this.renderGenres();
 
-        // Load recent songs
-        const recent = Songs.getRecent();
-        if (recent.length > 0) {
-            this.renderSongGrid('recent-songs', recent);
-        } else {
-            // Load trending if no recent
-            document.querySelector('#page-home .section:first-of-type .section-title').textContent = 'Trending Now 🔥';
-            const trending = await Songs.search('Tamil hits');
-            if (trending.length > 0) {
-                this.renderSongGrid('recent-songs', trending.slice(0, 10));
-            }
-        }
 
         // Load all songs
         const allSongs = await Songs.getTrending();
