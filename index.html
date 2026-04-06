@@ -49,6 +49,10 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <span>Search</span>
                 </a>
+                <a href="#recent" class="nav-link" data-page="recent" id="nav-recent">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Recently Played</span>
+                </a>
                 <a href="#favorites" class="nav-link" data-page="favorites" id="nav-favorites">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     <span>Favorites</span>
@@ -120,7 +124,6 @@
                 <div class="section">
                     <div class="section-header">
                         <h3 class="section-title">Recently Played</h3>
-                        <a href="#" class="section-link">See All</a>
                     </div>
                     <div id="recent-songs" class="songs-grid">
                         <!-- Songs loaded here -->
@@ -161,6 +164,25 @@
                     <div class="empty-state">
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <p>Search for your favorite songs</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Page -->
+            <section id="page-recent" class="page">
+                <div class="page-header favorites-header">
+                    <div class="favorites-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="page-title">Recently Played</h2>
+                        <p class="page-subtitle" id="recent-count">0 songs</p>
+                    </div>
+                </div>
+                <div id="recent-list" class="songs-list">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <p>Songs you play will appear here</p>
                     </div>
                 </div>
             </section>

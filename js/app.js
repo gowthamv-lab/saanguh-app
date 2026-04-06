@@ -77,6 +77,7 @@ const App = {
             // Load page-specific content
             if (page === 'favorites') this.renderFavorites();
             if (page === 'downloads') this.renderDownloads();
+            if (page === 'recent') this.renderRecentPage();
             if (page === 'search') document.getElementById('search-input').focus();
         }
 
@@ -185,6 +186,25 @@ const App = {
                 }
             }, 200);
         });
+    },
+
+    // ===============================
+    // Recent Page
+    // ===============================
+    renderRecentPage() {
+        const recent = Songs.getRecent();
+        document.getElementById('recent-count').textContent = `${recent.length} song${recent.length !== 1 ? 's' : ''}`;
+
+        if (recent.length === 0) {
+            document.getElementById('recent-list').innerHTML = `
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <p>Songs you play will appear here</p>
+                </div>`;
+            return;
+        }
+
+        this.renderSongList('recent-list', recent);
     },
 
     // ===============================
