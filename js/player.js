@@ -447,10 +447,19 @@ const Player = {
                 // Build artwork array - only include if cover_url exists and is valid
                 const artwork = [];
                 if (song.cover_url && song.cover_url.length > 0) {
-                    artwork.push({ src: song.cover_url, sizes: '512x512' });
-                    artwork.push({ src: song.cover_url, sizes: '256x256' });
-                    artwork.push({ src: song.cover_url, sizes: '192x192' });
-                    artwork.push({ src: song.cover_url, sizes: '96x96' });
+                    let coverUrl = song.cover_url;
+                    if (coverUrl.startsWith('/')) {
+                        coverUrl = window.location.origin + coverUrl;
+                    } else if (!coverUrl.startsWith('http')) {
+                        coverUrl = window.location.origin + '/' + coverUrl;
+                    }
+
+                    artwork.push({ src: coverUrl, sizes: '96x96', type: 'image/jpeg' });
+                    artwork.push({ src: coverUrl, sizes: '128x128', type: 'image/jpeg' });
+                    artwork.push({ src: coverUrl, sizes: '192x192', type: 'image/jpeg' });
+                    artwork.push({ src: coverUrl, sizes: '256x256', type: 'image/jpeg' });
+                    artwork.push({ src: coverUrl, sizes: '384x384', type: 'image/jpeg' });
+                    artwork.push({ src: coverUrl, sizes: '512x512', type: 'image/jpeg' });
                 }
 
                 const metadata = new MediaMetadata({

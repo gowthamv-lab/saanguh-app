@@ -99,6 +99,7 @@ body {
     grid-template-columns: var(--sidebar-width) 1fr;
     grid-template-rows: 1fr var(--player-height);
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
 }
 

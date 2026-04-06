@@ -45,13 +45,13 @@
         grid-template-rows: 1fr var(--player-height);
     }
 
-    /* Sidebar becomes a slide-out drawer */
     .sidebar {
         position: fixed;
         left: -100%;
         top: 0;
         width: 280px;
         height: 100vh;
+        height: 100dvh;
         z-index: 300;
         transition: left var(--transition-slow);
         box-shadow: var(--shadow-lg);
