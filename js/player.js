@@ -150,6 +150,10 @@ const Player = {
         this.updateMediaSession(song);
 
         this.audio.play().catch(err => {
+            if (err.name === 'AbortError' || err.name === 'NotAllowedError') {
+                console.log('Play interrupted/prevented by browser (user clicked next or autoplay blocked). Ignoring fallback.');
+                return;
+            }
             console.error('Play error:', err);
             this._tryFallback(this._originalSong || song, this.queue, this.currentIndex);
         });
@@ -219,6 +223,10 @@ const Player = {
             console.log(`✅ Fallback Level ${this._fallbackLevel} playback started!`);
             App.showToast('Playing from alternate source ✅');
         } catch (err) {
+            if (err.name === 'AbortError' || err.name === 'NotAllowedError') {
+                console.log(`Fallback Level ${this._fallbackLevel} interrupted by user.`);
+                return;
+            }
             console.error(`Fallback Level ${this._fallbackLevel} failed:`, err);
             // Recursively try next level
             this._tryFallback(song, queue, index);

@@ -282,6 +282,35 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         if video_id in STREAM_URL_CACHE:
             return STREAM_URL_CACHE[video_id]
 
+        # 1. Try Piped API (Fastest & Most Reliable)
+        try:
+            piped_url = f"https://pipedapi.kavin.rocks/streams/{video_id}"
+            data = self._fetch_json(piped_url)
+            if data and "audioStreams" in data and len(data["audioStreams"]) > 0:
+                audio_url = data["audioStreams"][0]["url"]
+                STREAM_URL_CACHE[video_id] = audio_url
+                print(f"  ✅ [Piped API] Extracted audio for {video_id}")
+                return audio_url
+        except Exception as e:
+            print(f"  ⚠️ Piped API failed for {video_id}: {e}")
+
+        # 2. Try Invidious Instances
+        instances = ["https://invidious.jing.rocks", "https://vid.priv.au", "https://inv.tux.pizza"]
+        for inst in instances:
+            try:
+                inv_url = f"{inst}/api/v1/videos/{video_id}"
+                data = self._fetch_json(inv_url)
+                if data and "adaptiveFormats" in data:
+                    audio_fmts = [f for f in data["adaptiveFormats"] if f.get("type", "").startswith("audio/mp4") or "audio" in f.get("type", "")]
+                    if audio_fmts:
+                        audio_url = audio_fmts[0]["url"]
+                        STREAM_URL_CACHE[video_id] = audio_url
+                        print(f"  ✅ [{inst}] Extracted audio for {video_id}")
+                        return audio_url
+            except Exception:
+                continue
+
+        # 3. Fallback to yt-dlp locally
         if not HAS_YT:
             return None
 
@@ -297,15 +326,18 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                 'socket_timeout': 10,
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:  # pyright: ignore
+                print(f"  🔄 [yt-dlp] Extracting local fallback for {video_id}...")
                 info = ydl.extract_info(
                     f"https://www.youtube.com/watch?v={video_id}", download=False
                 )
                 audio_url = info.get('url')
                 if audio_url:
                     STREAM_URL_CACHE[video_id] = audio_url
+                    print(f"  ✅ [yt-dlp] Extracted audio for {video_id}")
                     return audio_url
         except Exception as e:
-            print(f"  ⚠️  yt-dlp extract error for {video_id}: {e}")
+            print(f"  ⚠️ yt-dlp extract error for {video_id}: {e}")
+            
         return None
 
     # ══════════════════════════════════════════════════════════════
